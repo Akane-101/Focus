@@ -39,7 +39,20 @@ public sealed class FocusGate : MonoBehaviour
 
     private void Update()
     {
-        if (levelState == null || hasAdvancedStage || levelState.CurrentStage != FocusStage.OpenGate || levelState.CurrentLayer != FocusLayer.Near)
+        TryAdvanceStage();
+    }
+
+    private void OnDisable()
+    {
+        if (levelState != null)
+        {
+            levelState.StateChanged -= ApplyState;
+        }
+    }
+
+    private void TryAdvanceStage()
+    {
+        if (levelState == null || hasAdvancedStage || levelState.CurrentStage != FocusStage.OpenGate || !IsPassable())
         {
             return;
         }
@@ -53,14 +66,6 @@ public sealed class FocusGate : MonoBehaviour
         }
     }
 
-    private void OnDisable()
-    {
-        if (levelState != null)
-        {
-            levelState.StateChanged -= ApplyState;
-        }
-    }
-
     private void ApplyState()
     {
         if (levelState == null)
@@ -68,15 +73,13 @@ public sealed class FocusGate : MonoBehaviour
             return;
         }
 
-        bool isOpen = levelState.CurrentLayer == FocusLayer.Near;
-        float alpha = levelState.GetLayerAlpha(FocusLayer.Near);
-
         spriteRenderer.enabled = true;
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Near);
+        gateCollider.enabled = !IsPassable();
+    }
 
-        Color color = spriteRenderer.color;
-        color.a = alpha;
-        spriteRenderer.color = color;
-        gateCollider.enabled = !isOpen;
+    private bool IsPassable()
+    {
+        return levelState.CurrentLayer != FocusLayer.Mid;
     }
 }

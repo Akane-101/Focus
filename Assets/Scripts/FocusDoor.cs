@@ -63,14 +63,9 @@ public sealed class FocusDoor : MonoBehaviour
         }
 
         bool isActive = levelState.CurrentStage == FocusStage.ReachExit && levelState.CurrentLayer == FocusLayer.Far;
-        float alpha = levelState.GetLayerAlpha(FocusLayer.Far);
 
         spriteRenderer.enabled = true;
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Far);
-
-        Color color = spriteRenderer.color;
-        color.a = alpha;
-        spriteRenderer.color = color;
         doorCollider.enabled = isActive;
     }
 }

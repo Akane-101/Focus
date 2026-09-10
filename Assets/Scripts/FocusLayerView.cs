@@ -6,11 +6,14 @@ public sealed class FocusLayerView : MonoBehaviour
 
     private FocusLevelState levelState;
     private SpriteRenderer[] renderers;
+    private Collider2D[] colliders;
 
     private void Awake()
     {
         levelState = FindObjectOfType<FocusLevelState>();
         renderers = GetComponentsInChildren<SpriteRenderer>(true);
+        colliders = GetComponentsInChildren<Collider2D>(true);
+        FocusUnityLayers.Assign(transform, representedLayer);
 
         if (levelState == null)
         {
@@ -42,32 +45,73 @@ public sealed class FocusLayerView : MonoBehaviour
 
     private void ApplyState()
     {
-        if (levelState == null || renderers == null)
+        if (levelState == null)
         {
             return;
         }
 
-        float alpha = levelState.GetLayerAlpha(representedLayer);
         int sortingOrder = levelState.GetSortingOrder(representedLayer);
+        bool isCurrentLayer = levelState.CurrentLayer == representedLayer;
 
-        for (int i = 0; i < renderers.Length; i++)
+        if (renderers != null)
         {
-            SpriteRenderer currentRenderer = renderers[i];
-
-            if (currentRenderer == null ||
-                currentRenderer.GetComponentInParent<FocusGate>() != null ||
-                currentRenderer.GetComponentInParent<FocusDoor>() != null ||
-                currentRenderer.GetComponentInParent<FocusBridge>() != null)
+            for (int i = 0; i < renderers.Length; i++)
             {
-                continue;
+                SpriteRenderer currentRenderer = renderers[i];
+
+                if (currentRenderer == null ||
+                    currentRenderer.GetComponentInParent<FocusGate>() != null ||
+                    currentRenderer.GetComponentInParent<FocusDoor>() != null)
+                {
+                    continue;
+                }
+
+                bool isBridge = BelongsToBridge(currentRenderer.transform);
+                currentRenderer.enabled = !isBridge || isCurrentLayer;
+                currentRenderer.sortingOrder = sortingOrder;
+            }
+        }
+
+        if (colliders != null)
+        {
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider2D currentCollider = colliders[i];
+
+                if (currentCollider == null ||
+                    currentCollider.GetComponentInParent<FocusGate>() != null ||
+                    currentCollider.GetComponentInParent<FocusDoor>() != null)
+                {
+                    continue;
+                }
+
+                currentCollider.enabled = isCurrentLayer;
+            }
+        }
+    }
+
+    private static bool BelongsToBridge(Transform current)
+    {
+        while (current != null)
+        {
+            if (current.GetComponent<FocusBridge>() != null)
+            {
+                return true;
             }
 
-            currentRenderer.enabled = true;
-            currentRenderer.sortingOrder = sortingOrder;
+            if (current.name.ToLowerInvariant().Contains("bridge"))
+            {
+                return true;
+            }
 
-            Color color = currentRenderer.color;
-            color.a = alpha;
-            currentRenderer.color = color;
+            if (current.GetComponent<FocusLayerView>() != null)
+            {
+                return false;
+            }
+
+            current = current.parent;
         }
+
+        return false;
     }
 }

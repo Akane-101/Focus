@@ -18,8 +18,6 @@ public enum FocusStage
 
 public sealed class FocusLevelState : MonoBehaviour
 {
-    private const float ActiveLayerAlpha = 1f;
-    private const float InactiveLayerAlpha = 0.5f;
     private const int FarSortingOrder = 10;
     private const int MidSortingOrder = 20;
     private const int NearSortingOrder = 30;
@@ -27,6 +25,8 @@ public sealed class FocusLevelState : MonoBehaviour
     [SerializeField] private FocusLayer initialLayer = FocusLayer.Mid;
     [SerializeField] private string playerObjectName = "Player";
     [SerializeField] private bool autoLoadNextScene = true;
+    [SerializeField] private float focusTransitionDuration = 0.45f;
+    [SerializeField] private float unfocusedBlur = 2.2f;
 
     public event Action StateChanged;
 
@@ -36,9 +36,20 @@ public sealed class FocusLevelState : MonoBehaviour
 
     public Transform PlayerTransform { get; private set; }
 
+    public float FocusTransitionDuration
+    {
+        get { return focusTransitionDuration; }
+    }
+
+    public float UnfocusedBlur
+    {
+        get { return unfocusedBlur; }
+    }
+
     private void Awake()
     {
         CurrentLayer = initialLayer;
+        EnsureCompositor();
 
         GameObject playerObject = GameObject.Find(playerObjectName);
 
@@ -87,11 +98,6 @@ public sealed class FocusLevelState : MonoBehaviour
         Debug.Log("Level clear.");
     }
 
-    public float GetLayerAlpha(FocusLayer layer)
-    {
-        return CurrentLayer == layer ? ActiveLayerAlpha : InactiveLayerAlpha;
-    }
-
     public int GetSortingOrder(FocusLayer layer)
     {
         switch (layer)
@@ -113,5 +119,21 @@ public sealed class FocusLevelState : MonoBehaviour
         {
             handler();
         }
+    }
+
+    private static void EnsureCompositor()
+    {
+        Camera mainCamera = Camera.main;
+
+        if (mainCamera != null && mainCamera.GetComponent<FocusLayerCompositor>() == null)
+        {
+            mainCamera.gameObject.AddComponent<FocusLayerCompositor>();
+        }
+    }
+
+    private void OnValidate()
+    {
+        focusTransitionDuration = Mathf.Max(0.01f, focusTransitionDuration);
+        unfocusedBlur = Mathf.Max(0f, unfocusedBlur);
     }
 }
