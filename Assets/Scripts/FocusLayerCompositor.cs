@@ -107,7 +107,7 @@ public sealed class FocusLayerCompositor : MonoBehaviour
                 RenderTexture.ReleaseTemporary(blurred);
             }
 
-            if (layer == levelState.CurrentLayer && playerTexture != null)
+            if (layer == levelState.CurrentLayer && playerTexture != null && !DrawsPlayerInLayer(layer))
             {
                 Graphics.Blit(playerTexture, composite, fxMaterial, BlendPass);
             }
@@ -294,15 +294,38 @@ public sealed class FocusLayerCompositor : MonoBehaviour
                 continue;
             }
 
-            ConfigureOverlayCamera(layerCamera, layerTextures[layerIndex], 1 << unityLayer, mainCamera.depth - 4 + layerIndex);
+            int cullingMask = 1 << unityLayer;
+
+            if (DrawsPlayerInLayer(layer))
+            {
+                int playerLayer = LayerMask.NameToLayer(FocusUnityLayers.Player);
+
+                if (playerLayer >= 0)
+                {
+                    cullingMask |= 1 << playerLayer;
+                }
+            }
+
+            ConfigureOverlayCamera(layerCamera, layerTextures[layerIndex], cullingMask, mainCamera.depth - 4 + layerIndex);
         }
 
-        int playerLayer = LayerMask.NameToLayer(FocusUnityLayers.Player);
+        int overlayPlayerLayer = LayerMask.NameToLayer(FocusUnityLayers.Player);
+        bool drawPlayerOverlay = !DrawsPlayerInLayer(levelState.CurrentLayer);
 
-        if (playerCamera != null && playerTexture != null && playerLayer >= 0)
+        if (playerCamera != null && playerTexture != null && overlayPlayerLayer >= 0 && drawPlayerOverlay)
         {
-            ConfigureOverlayCamera(playerCamera, playerTexture, 1 << playerLayer, mainCamera.depth - 1);
+            ConfigureOverlayCamera(playerCamera, playerTexture, 1 << overlayPlayerLayer, mainCamera.depth - 1);
         }
+        else if (playerCamera != null)
+        {
+            playerCamera.enabled = false;
+            playerCamera.targetTexture = null;
+        }
+    }
+
+    private bool DrawsPlayerInLayer(FocusLayer layer)
+    {
+        return layer == FocusLayer.Mid && levelState != null && levelState.CurrentLayer == FocusLayer.Mid;
     }
 
     private void ConfigureOverlayCamera(Camera overlayCamera, RenderTexture targetTexture, int cullingMask, float depth)

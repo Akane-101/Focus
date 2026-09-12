@@ -80,7 +80,7 @@ public sealed class FocusWindDoor : MonoBehaviour
         }
 
         spriteRenderer.enabled = true;
-        spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid);
+        spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid, FocusSortOrder.Resolve(transform, 0));
         doorCollider.enabled = levelState.CurrentStage == FocusStage.ExitOpen;
     }
 

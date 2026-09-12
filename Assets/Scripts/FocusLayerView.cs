@@ -7,12 +7,14 @@ public sealed class FocusLayerView : MonoBehaviour
     private FocusLevelState levelState;
     private SpriteRenderer[] renderers;
     private Collider2D[] colliders;
+    private int[] implicitOrderOffsets;
 
     private void Awake()
     {
         levelState = FindObjectOfType<FocusLevelState>();
         renderers = GetComponentsInChildren<SpriteRenderer>(true);
         colliders = GetComponentsInChildren<Collider2D>(true);
+        implicitOrderOffsets = CacheImplicitOrderOffsets(renderers, representedLayer, levelState);
         FocusUnityLayers.Assign(transform, representedLayer);
 
         if (levelState == null)
@@ -50,7 +52,7 @@ public sealed class FocusLayerView : MonoBehaviour
             return;
         }
 
-        int sortingOrder = levelState.GetSortingOrder(representedLayer);
+        int baseSortingOrder = levelState.GetSortingOrder(representedLayer);
         bool isCurrentLayer = levelState.CurrentLayer == representedLayer;
 
         if (renderers != null)
@@ -66,7 +68,7 @@ public sealed class FocusLayerView : MonoBehaviour
 
                 bool isBridge = BelongsToBridge(currentRenderer.transform);
                 currentRenderer.enabled = !isBridge || isCurrentLayer;
-                currentRenderer.sortingOrder = sortingOrder;
+                currentRenderer.sortingOrder = baseSortingOrder + GetOrderOffset(currentRenderer, i);
             }
         }
 
@@ -84,6 +86,50 @@ public sealed class FocusLayerView : MonoBehaviour
                 currentCollider.enabled = isCurrentLayer;
             }
         }
+    }
+
+    private int GetOrderOffset(SpriteRenderer currentRenderer, int rendererIndex)
+    {
+        FocusSortOrder sortOrder = FocusSortOrder.FindOnAncestors(currentRenderer.transform);
+
+        if (sortOrder != null)
+        {
+            return sortOrder.GetOrderOffset();
+        }
+
+        if (implicitOrderOffsets != null && rendererIndex >= 0 && rendererIndex < implicitOrderOffsets.Length)
+        {
+            return implicitOrderOffsets[rendererIndex];
+        }
+
+        return 0;
+    }
+
+    private static int[] CacheImplicitOrderOffsets(SpriteRenderer[] layerRenderers, FocusLayer layer, FocusLevelState levelState)
+    {
+        int[] offsets = new int[layerRenderers.Length];
+
+        if (layer != FocusLayer.Mid)
+        {
+            return offsets;
+        }
+
+        int baseSortingOrder = levelState != null ? levelState.GetSortingOrder(layer) : 20;
+
+        for (int i = 0; i < layerRenderers.Length; i++)
+        {
+            SpriteRenderer currentRenderer = layerRenderers[i];
+
+            if (currentRenderer == null || FocusSortOrder.FindOnAncestors(currentRenderer.transform) != null)
+            {
+                continue;
+            }
+
+            int existingOrder = currentRenderer.sortingOrder;
+            offsets[i] = existingOrder == 0 ? 0 : existingOrder - baseSortingOrder;
+        }
+
+        return offsets;
     }
 
     private static bool HasDedicatedController(Transform current)

@@ -3,8 +3,6 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public sealed class PlayerChangeLayer : MonoBehaviour
 {
-    private const int PlayerOrderOffset = 5;
-
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
 
@@ -77,7 +75,7 @@ public sealed class PlayerChangeLayer : MonoBehaviour
             return;
         }
 
-        spriteRenderer.sortingOrder = levelState.GetSortingOrder(levelState.CurrentLayer) + PlayerOrderOffset;
+        spriteRenderer.sortingOrder = levelState.GetSortingOrder(levelState.CurrentLayer, FocusLevelState.PlayerOrderOffset);
     }
 
     private static FocusLayer GetPreviousLayer(FocusLayer currentLayer)

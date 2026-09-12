@@ -81,7 +81,7 @@ public sealed class FocusLeaf : MonoBehaviour
         }
 
         spriteRenderer.enabled = true;
-        spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid) + 1;
+        spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid, FocusSortOrder.Resolve(transform, 1));
         leafCollider.enabled = true;
         BeginBlow(GetTargetLocalPosition());
     }

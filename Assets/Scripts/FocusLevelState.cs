@@ -26,6 +26,8 @@ public enum FocusStage
 
 public sealed class FocusLevelState : MonoBehaviour
 {
+    public const int PlayerOrderOffset = 5;
+
     private const int FarSortingOrder = 10;
     private const int MidSortingOrder = 20;
     private const int NearSortingOrder = 30;
@@ -117,14 +119,19 @@ public sealed class FocusLevelState : MonoBehaviour
 
     public int GetSortingOrder(FocusLayer layer)
     {
+        return GetSortingOrder(layer, 0);
+    }
+
+    public int GetSortingOrder(FocusLayer layer, int orderOffset)
+    {
         switch (layer)
         {
             case FocusLayer.Near:
-                return NearSortingOrder;
+                return NearSortingOrder + orderOffset;
             case FocusLayer.Mid:
-                return MidSortingOrder;
+                return MidSortingOrder + orderOffset;
             default:
-                return FarSortingOrder;
+                return FarSortingOrder + orderOffset;
         }
     }
 
