@@ -59,9 +59,7 @@ public sealed class FocusLayerView : MonoBehaviour
             {
                 SpriteRenderer currentRenderer = renderers[i];
 
-                if (currentRenderer == null ||
-                    currentRenderer.GetComponentInParent<FocusGate>() != null ||
-                    currentRenderer.GetComponentInParent<FocusDoor>() != null)
+                if (currentRenderer == null || HasDedicatedController(currentRenderer.transform))
                 {
                     continue;
                 }
@@ -78,9 +76,7 @@ public sealed class FocusLayerView : MonoBehaviour
             {
                 Collider2D currentCollider = colliders[i];
 
-                if (currentCollider == null ||
-                    currentCollider.GetComponentInParent<FocusGate>() != null ||
-                    currentCollider.GetComponentInParent<FocusDoor>() != null)
+                if (currentCollider == null || HasDedicatedController(currentCollider.transform))
                 {
                     continue;
                 }
@@ -88,6 +84,17 @@ public sealed class FocusLayerView : MonoBehaviour
                 currentCollider.enabled = isCurrentLayer;
             }
         }
+    }
+
+    private static bool HasDedicatedController(Transform current)
+    {
+        return current.GetComponentInParent<FocusGate>() != null ||
+               current.GetComponentInParent<FocusDoor>() != null ||
+               current.GetComponentInParent<FocusWindDoor>() != null ||
+               current.GetComponentInParent<FocusLeaf>() != null ||
+               current.GetComponentInParent<FocusSunGlare>() != null ||
+               current.GetComponentInParent<FocusLockedDoor>() != null ||
+               current.GetComponentInParent<FocusKey>() != null;
     }
 
     private static bool BelongsToBridge(Transform current)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -14,6 +15,9 @@ public sealed class PlayerMove : MonoBehaviour
     private Rigidbody2D body;
     private CapsuleCollider2D capsule;
     private SpriteRenderer spriteRenderer;
+    private readonly List<object> movementLocks = new List<object>();
+    private readonly List<object> rightLocks = new List<object>();
+    private readonly List<object> leftLocks = new List<object>();
 
     private float horizontalInput;
 
@@ -49,9 +53,67 @@ public sealed class PlayerMove : MonoBehaviour
         }
     }
 
+    public bool IsMovementLocked
+    {
+        get { return movementLocks.Count > 0; }
+    }
+
+    public void SetMovementLocked(object source, bool locked)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        if (locked)
+        {
+            if (!movementLocks.Contains(source))
+            {
+                movementLocks.Add(source);
+            }
+
+            return;
+        }
+
+        movementLocks.Remove(source);
+    }
+
+    public void SetDirectionBlocked(object source, bool blockRight, bool blockLeft)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        SetDirectionLock(rightLocks, source, blockRight);
+        SetDirectionLock(leftLocks, source, blockLeft);
+    }
+
+    private static void SetDirectionLock(List<object> locks, object source, bool locked)
+    {
+        if (locked)
+        {
+            if (!locks.Contains(source))
+            {
+                locks.Add(source);
+            }
+
+            return;
+        }
+
+        locks.Remove(source);
+    }
+
     private void FixedUpdate()
     {
-        float targetSpeed = horizontalInput * moveSpeed;
+        float input = horizontalInput;
+
+        if (IsMovementLocked || (input > 0f && rightLocks.Count > 0) || (input < 0f && leftLocks.Count > 0))
+        {
+            input = 0f;
+        }
+
+        float targetSpeed = input * moveSpeed;
         float accelerationRate = Mathf.Abs(targetSpeed) > 0.01f ? acceleration : deceleration;
         float nextHorizontalVelocity = Mathf.MoveTowards(body.velocity.x, targetSpeed, accelerationRate * Time.fixedDeltaTime);
 

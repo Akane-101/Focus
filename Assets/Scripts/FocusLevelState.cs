@@ -13,7 +13,15 @@ public enum FocusStage
 {
     OpenGate,
     BuildBridge,
-    ReachExit
+    ReachExit,
+    WaitFirstWind,
+    DoorBlown,
+    LeafReady,
+    LeafCollected,
+    ReachedDoor,
+    ExitOpen,
+    WaitKey,
+    HasKey
 }
 
 public sealed class FocusLevelState : MonoBehaviour
@@ -23,6 +31,7 @@ public sealed class FocusLevelState : MonoBehaviour
     private const int NearSortingOrder = 30;
 
     [SerializeField] private FocusLayer initialLayer = FocusLayer.Mid;
+    [SerializeField] private FocusStage initialStage = FocusStage.OpenGate;
     [SerializeField] private string playerObjectName = "Player";
     [SerializeField] private bool autoLoadNextScene = true;
     [SerializeField] private float focusTransitionDuration = 0.45f;
@@ -33,6 +42,8 @@ public sealed class FocusLevelState : MonoBehaviour
     public FocusLayer CurrentLayer { get; private set; }
 
     public FocusStage CurrentStage { get; private set; } = FocusStage.OpenGate;
+
+    public int MidFocusCount { get; private set; }
 
     public Transform PlayerTransform { get; private set; }
 
@@ -49,6 +60,7 @@ public sealed class FocusLevelState : MonoBehaviour
     private void Awake()
     {
         CurrentLayer = initialLayer;
+        CurrentStage = initialStage;
         EnsureCompositor();
 
         GameObject playerObject = GameObject.Find(playerObjectName);
@@ -68,6 +80,11 @@ public sealed class FocusLevelState : MonoBehaviour
         if (CurrentLayer == nextLayer)
         {
             return;
+        }
+
+        if (nextLayer == FocusLayer.Mid)
+        {
+            MidFocusCount++;
         }
 
         CurrentLayer = nextLayer;
