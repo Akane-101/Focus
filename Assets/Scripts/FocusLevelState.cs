@@ -63,7 +63,14 @@ public sealed class FocusLevelState : MonoBehaviour
     {
         CurrentLayer = initialLayer;
         CurrentStage = initialStage;
+
+        if (CurrentLayer == FocusLayer.Mid)
+        {
+            MidFocusCount = 1;
+        }
+
         EnsureCompositor();
+        RestartLevel.EnsureHud();
 
         GameObject playerObject = GameObject.Find(playerObjectName);
 
@@ -104,17 +111,104 @@ public sealed class FocusLevelState : MonoBehaviour
         NotifyStateChanged();
     }
 
+    public void TryEnterDoor(Transform door, float enterDistance, bool hardConditionMet)
+    {
+        if (!hardConditionMet || door == null || PlayerTransform == null || !Input.GetKeyDown(KeyCode.F))
+        {
+            return;
+        }
+
+        if (!IsPlayerAtDoor(door, PlayerTransform, enterDistance))
+        {
+            return;
+        }
+
+        CompleteLevel();
+    }
+
+    private static bool IsPlayerAtDoor(Transform door, Transform player, float enterDistance)
+    {
+        Vector2 playerPos = player.position;
+        Collider2D doorCollider = door.GetComponent<Collider2D>();
+
+        if (doorCollider != null)
+        {
+            Vector2 closest = doorCollider.ClosestPoint(playerPos);
+            if (Vector2.Distance(playerPos, closest) <= enterDistance)
+            {
+                return true;
+            }
+
+            Bounds bounds = doorCollider.bounds;
+            float dx = Mathf.Abs(playerPos.x - bounds.center.x) - bounds.extents.x;
+            float dy = Mathf.Abs(playerPos.y - bounds.center.y) - bounds.extents.y;
+            return dx <= enterDistance && dy <= enterDistance * 2f;
+        }
+
+        return Vector2.Distance(playerPos, (Vector2)door.position) <= enterDistance;
+    }
+
     public void CompleteLevel()
     {
-        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-
-        if (autoLoadNextScene && nextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        if (!autoLoadNextScene)
         {
-            SceneManager.LoadScene(nextSceneIndex);
+            Debug.Log("Level clear.");
+            return;
+        }
+
+        Scene activeScene = SceneManager.GetActiveScene();
+        string nextSceneName = GetNextLevelName(activeScene.name);
+
+        if (!string.IsNullOrEmpty(nextSceneName))
+        {
+            SceneManager.LoadScene(nextSceneName);
+            return;
+        }
+
+        int nextBuildIndex = activeScene.buildIndex + 1;
+
+        if (activeScene.buildIndex >= 0 && nextBuildIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(nextBuildIndex);
             return;
         }
 
         Debug.Log("Level clear.");
+    }
+
+    private static string GetNextLevelName(string currentName)
+    {
+        if (currentName == "Level1" || currentName == "1")
+        {
+            return "Level2";
+        }
+
+        if (currentName == "Level2" || currentName == "2")
+        {
+            return "Level3";
+        }
+
+        if (currentName == "Level3" || currentName == "3")
+        {
+            return "Level4";
+        }
+
+        if (currentName == "Level4" || currentName == "4")
+        {
+            return "Level5";
+        }
+
+        if (currentName == "Level5" || currentName == "5")
+        {
+            return "Level6";
+        }
+
+        if (currentName == "Level6" || currentName == "6")
+        {
+            return "Level7";
+        }
+
+        return null;
     }
 
     public int GetSortingOrder(FocusLayer layer)

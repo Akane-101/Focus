@@ -5,6 +5,7 @@ using UnityEngine;
 public sealed class FocusWindDoor : MonoBehaviour
 {
     [SerializeField] private float reachThreshold = 1.35f;
+    [SerializeField] private float enterDistance = 3.5f;
 
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
@@ -42,6 +43,10 @@ public sealed class FocusWindDoor : MonoBehaviour
         TryAdvanceFromWind();
         TryMarkReached();
         TryOpenForExit();
+        if (levelState != null)
+        {
+            levelState.TryEnterDoor(transform, enterDistance, true);
+        }
     }
 
     private void OnDisable()
@@ -50,26 +55,6 @@ public sealed class FocusWindDoor : MonoBehaviour
         {
             levelState.StateChanged -= ApplyState;
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        TryComplete(other);
-    }
-
-    private void OnTriggerStay2D(Collider2D other)
-    {
-        TryComplete(other);
-    }
-
-    private void TryComplete(Collider2D other)
-    {
-        if (levelState == null || !doorCollider.enabled || levelState.CurrentStage != FocusStage.ExitOpen || other.transform != levelState.PlayerTransform)
-        {
-            return;
-        }
-
-        levelState.CompleteLevel();
     }
 
     private void ApplyState()
@@ -81,7 +66,7 @@ public sealed class FocusWindDoor : MonoBehaviour
 
         spriteRenderer.enabled = true;
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid, FocusSortOrder.Resolve(transform, 0));
-        doorCollider.enabled = levelState.CurrentStage == FocusStage.ExitOpen;
+        doorCollider.enabled = true;
     }
 
     private void TryAdvanceFromWind()

@@ -20,7 +20,7 @@ public sealed class FocusBridge : MonoBehaviour
 
     private void Update()
     {
-        if (levelState == null || hasAdvancedStage || levelState.CurrentStage != FocusStage.BuildBridge || levelState.CurrentLayer != FocusLayer.Mid)
+        if (levelState == null || hasAdvancedStage || levelState.CurrentStage != FocusStage.BuildBridge || levelState.CurrentLayer != FocusLayer.Near)
         {
             return;
         }

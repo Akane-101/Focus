@@ -107,10 +107,13 @@ public sealed class FocusLayerCompositor : MonoBehaviour
                 RenderTexture.ReleaseTemporary(blurred);
             }
 
-            if (layer == levelState.CurrentLayer && playerTexture != null && !DrawsPlayerInLayer(layer))
-            {
-                Graphics.Blit(playerTexture, composite, fxMaterial, BlendPass);
-            }
+        }
+
+        Graphics.Blit(source, composite, fxMaterial, BlendPass);
+
+        if (playerTexture != null && !DrawsPlayerInLayer(levelState.CurrentLayer))
+        {
+            Graphics.Blit(playerTexture, composite, fxMaterial, BlendPass);
         }
 
         Graphics.Blit(composite, destination);

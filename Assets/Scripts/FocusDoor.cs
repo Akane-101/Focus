@@ -4,6 +4,11 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public sealed class FocusDoor : MonoBehaviour
 {
+    [SerializeField] private float enterDistance = 3.5f;
+    [SerializeField] private bool requireCurrentLayer;
+    [SerializeField] private FocusLayer requiredLayer = FocusLayer.Far;
+    [SerializeField] private float minEnterY = -999f;
+
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
     private Collider2D doorCollider;
@@ -13,15 +18,13 @@ public sealed class FocusDoor : MonoBehaviour
         levelState = FindObjectOfType<FocusLevelState>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         doorCollider = GetComponent<Collider2D>();
+        doorCollider.isTrigger = true;
 
         if (levelState == null)
         {
             Debug.LogError("Missing FocusLevelState in scene.");
             enabled = false;
-            return;
         }
-
-        doorCollider.isTrigger = true;
     }
 
     private void OnEnable()
@@ -37,22 +40,20 @@ public sealed class FocusDoor : MonoBehaviour
         ApplyState();
     }
 
+    private void Update()
+    {
+        if (levelState != null)
+        {
+            levelState.TryEnterDoor(transform, enterDistance, CanEnter());
+        }
+    }
+
     private void OnDisable()
     {
         if (levelState != null)
         {
             levelState.StateChanged -= ApplyState;
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (levelState == null || !doorCollider.enabled || other.transform != levelState.PlayerTransform)
-        {
-            return;
-        }
-
-        levelState.CompleteLevel();
     }
 
     private void ApplyState()
@@ -62,10 +63,23 @@ public sealed class FocusDoor : MonoBehaviour
             return;
         }
 
-        bool isActive = levelState.CurrentStage == FocusStage.ReachExit && levelState.CurrentLayer == FocusLayer.Far;
-
         spriteRenderer.enabled = true;
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Far);
-        doorCollider.enabled = isActive;
+        doorCollider.enabled = true;
+    }
+
+    private bool CanEnter()
+    {
+        if (levelState == null || levelState.PlayerTransform == null)
+        {
+            return false;
+        }
+
+        if (requireCurrentLayer && levelState.CurrentLayer != requiredLayer)
+        {
+            return false;
+        }
+
+        return levelState.PlayerTransform.position.y >= minEnterY;
     }
 }

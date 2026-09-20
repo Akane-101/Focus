@@ -5,6 +5,7 @@ using UnityEngine;
 public sealed class FocusSunGlare : MonoBehaviour
 {
     [SerializeField] private float glareFadeSpeed = 4f;
+    [SerializeField] private bool requireDoorBlown = true;
 
     private FocusLevelState levelState;
     private PlayerMove playerMove;
@@ -90,13 +91,13 @@ public sealed class FocusSunGlare : MonoBehaviour
 
         spriteRenderer.enabled = true;
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Mid, FocusSortOrder.Resolve(transform, -1));
-        sunCollider.enabled = levelState.CurrentStage >= FocusStage.DoorBlown;
+        sunCollider.enabled = !requireDoorBlown || levelState.CurrentStage >= FocusStage.DoorBlown;
     }
 
     private bool IsPlayerInLight()
     {
         if (levelState == null ||
-            levelState.CurrentStage < FocusStage.DoorBlown ||
+            (requireDoorBlown && levelState.CurrentStage < FocusStage.DoorBlown) ||
             levelState.CurrentLayer != FocusLayer.Mid ||
             levelState.PlayerTransform == null)
         {

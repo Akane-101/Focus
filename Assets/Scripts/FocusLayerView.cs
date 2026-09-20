@@ -140,7 +140,10 @@ public sealed class FocusLayerView : MonoBehaviour
                current.GetComponentInParent<FocusLeaf>() != null ||
                current.GetComponentInParent<FocusSunGlare>() != null ||
                current.GetComponentInParent<FocusLockedDoor>() != null ||
-               current.GetComponentInParent<FocusKey>() != null;
+               current.GetComponentInParent<FocusKey>() != null ||
+               current.GetComponentInParent<FocusPillar>() != null ||
+               current.GetComponentInParent<FocusSlope>() != null ||
+               current.GetComponentInParent<FocusElevator>() != null;
     }
 
     private static bool BelongsToBridge(Transform current)

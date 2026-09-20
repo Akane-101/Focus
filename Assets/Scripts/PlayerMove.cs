@@ -16,8 +16,10 @@ public sealed class PlayerMove : MonoBehaviour
     private CapsuleCollider2D capsule;
     private SpriteRenderer spriteRenderer;
     private readonly List<object> movementLocks = new List<object>();
+    private readonly List<object> carryLocks = new List<object>();
     private readonly List<object> rightLocks = new List<object>();
     private readonly List<object> leftLocks = new List<object>();
+    private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
 
     private float horizontalInput;
 
@@ -78,6 +80,32 @@ public sealed class PlayerMove : MonoBehaviour
         movementLocks.Remove(source);
     }
 
+    public void SetCarried(object source, bool carried)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        if (carried)
+        {
+            if (!carryLocks.Contains(source))
+            {
+                carryLocks.Add(source);
+            }
+        }
+        else
+        {
+            carryLocks.Remove(source);
+        }
+
+        body.gravityScale = carryLocks.Count > 0 ? 0f : gravityScale;
+        if (carryLocks.Count > 0)
+        {
+            body.velocity = Vector2.zero;
+        }
+    }
+
     public void SetDirectionBlocked(object source, bool blockRight, bool blockLeft)
     {
         if (source == null)
@@ -106,6 +134,11 @@ public sealed class PlayerMove : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (carryLocks.Count > 0)
+        {
+            return;
+        }
+
         float input = horizontalInput;
 
         if (IsMovementLocked || (input > 0f && rightLocks.Count > 0) || (input < 0f && leftLocks.Count > 0))
@@ -115,8 +148,57 @@ public sealed class PlayerMove : MonoBehaviour
 
         float targetSpeed = input * moveSpeed;
         float accelerationRate = Mathf.Abs(targetSpeed) > 0.01f ? acceleration : deceleration;
-        float nextHorizontalVelocity = Mathf.MoveTowards(body.velocity.x, targetSpeed, accelerationRate * Time.fixedDeltaTime);
+        Vector2 groundNormal;
+        bool onSlope = TryGetGroundNormal(out groundNormal) && Mathf.Abs(groundNormal.x) > 0.12f;
 
+        if (onSlope)
+        {
+            Vector2 tangent = new Vector2(groundNormal.y, -groundNormal.x);
+            if (tangent.x < 0f)
+            {
+                tangent = -tangent;
+            }
+
+            Vector2 desiredVelocity = tangent * targetSpeed;
+            body.velocity = Vector2.MoveTowards(body.velocity, desiredVelocity, accelerationRate * Time.fixedDeltaTime);
+            return;
+        }
+
+        float nextHorizontalVelocity = Mathf.MoveTowards(body.velocity.x, targetSpeed, accelerationRate * Time.fixedDeltaTime);
         body.velocity = new Vector2(nextHorizontalVelocity, body.velocity.y);
+    }
+
+    private bool TryGetGroundNormal(out Vector2 normal)
+    {
+        normal = Vector2.up;
+        Bounds bounds = capsule.bounds;
+        Vector2 origin = bounds.center;
+        float radius = Mathf.Max(0.05f, bounds.extents.x * 0.85f);
+        float distance = bounds.extents.y + 0.12f;
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+        filter.useTriggers = false;
+
+        int hitCount = Physics2D.CircleCast(origin, radius, Vector2.down, filter, groundHits, distance);
+        float bestDistance = float.MaxValue;
+        bool found = false;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit2D hit = groundHits[i];
+            if (hit.collider == null || hit.collider == capsule || hit.normal.y < 0.2f)
+            {
+                continue;
+            }
+
+            if (hit.distance < bestDistance)
+            {
+                bestDistance = hit.distance;
+                normal = hit.normal;
+                found = true;
+            }
+        }
+
+        return found;
     }
 }
