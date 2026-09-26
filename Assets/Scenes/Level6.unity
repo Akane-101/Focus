@@ -285,6 +285,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enterDistance: 3.5
+  requireCurrentLayer: 0
+  requiredLayer: 0
+  minEnterY: -999
 --- !u!61 &27336613
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -1429,9 +1432,9 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.8745099, g: 0.8745099, b: 0.8745099, a: 1}
+  m_Color: {r: 0.7803922, g: 0.7803922, b: 0.7803922, a: 1}
   m_FlipX: 0
-  m_FlipY: 0
+  m_FlipY: 1
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5

@@ -111,9 +111,23 @@ public sealed class FocusLevelState : MonoBehaviour
         NotifyStateChanged();
     }
 
+    private static bool IsAnyIceHeld()
+    {
+        FocusIce[] iceBlocks = FindObjectsOfType<FocusIce>();
+        for (int i = 0; i < iceBlocks.Length; i++)
+        {
+            if (iceBlocks[i] != null && iceBlocks[i].IsHeld)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void TryEnterDoor(Transform door, float enterDistance, bool hardConditionMet)
     {
-        if (!hardConditionMet || door == null || PlayerTransform == null || !Input.GetKeyDown(KeyCode.F))
+        if (!hardConditionMet || door == null || PlayerTransform == null || !Input.GetKeyDown(KeyCode.F) || IsAnyIceHeld())
         {
             return;
         }
@@ -206,6 +220,26 @@ public sealed class FocusLevelState : MonoBehaviour
         if (currentName == "Level6" || currentName == "6")
         {
             return "Level7";
+        }
+
+        if (currentName == "Level7" || currentName == "7")
+        {
+            return "Level8";
+        }
+
+        if (currentName == "Level8" || currentName == "8")
+        {
+            return "Level9";
+        }
+
+        if (currentName == "Level9" || currentName == "9")
+        {
+            return "Level10";
+        }
+
+        if (currentName == "Level10" || currentName == "10")
+        {
+            return "Level11";
         }
 
         return null;

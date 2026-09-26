@@ -5,11 +5,13 @@ public sealed class PlayerChangeLayer : MonoBehaviour
 {
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
+    private PlayerMove playerMove;
 
     private void Awake()
     {
         levelState = FindObjectOfType<FocusLevelState>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        playerMove = GetComponent<PlayerMove>();
 
         if (levelState == null)
         {
@@ -33,7 +35,7 @@ public sealed class PlayerChangeLayer : MonoBehaviour
 
     private void Update()
     {
-        if (levelState == null)
+        if (levelState == null || (playerMove != null && playerMove.IsStunned))
         {
             return;
         }

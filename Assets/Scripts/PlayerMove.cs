@@ -22,6 +22,7 @@ public sealed class PlayerMove : MonoBehaviour
     private readonly RaycastHit2D[] groundHits = new RaycastHit2D[8];
 
     private float horizontalInput;
+    private float stunUntilTime;
 
     private void Awake()
     {
@@ -47,7 +48,7 @@ public sealed class PlayerMove : MonoBehaviour
 
     private void Update()
     {
-        horizontalInput = Input.GetAxisRaw("Horizontal");
+        horizontalInput = IsMovementLocked ? 0f : Input.GetAxisRaw("Horizontal");
 
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
@@ -55,9 +56,29 @@ public sealed class PlayerMove : MonoBehaviour
         }
     }
 
+    public bool IsStunned
+    {
+        get { return Time.time < stunUntilTime; }
+    }
+
+    public void ApplyStun(float duration)
+    {
+        stunUntilTime = Mathf.Max(stunUntilTime, Time.time + Mathf.Max(0f, duration));
+        StopHorizontal();
+    }
+
+    public void StopHorizontal()
+    {
+        horizontalInput = 0f;
+        if (body != null && carryLocks.Count == 0)
+        {
+            body.velocity = new Vector2(0f, body.velocity.y);
+        }
+    }
+
     public bool IsMovementLocked
     {
-        get { return movementLocks.Count > 0; }
+        get { return movementLocks.Count > 0 || IsStunned; }
     }
 
     public void SetMovementLocked(object source, bool locked)

@@ -1,20 +1,35 @@
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
-[RequireComponent(typeof(Collider2D))]
 public sealed class FocusKey : MonoBehaviour
 {
+    [SerializeField] private FocusLayer requiredLayer = FocusLayer.Far;
+    [SerializeField] private float collectDistance = 1.1f;
+
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
-    private Collider2D keyCollider;
     private bool isCollected;
+    private bool canCollect;
 
     private void Awake()
     {
         levelState = FindObjectOfType<FocusLevelState>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-        keyCollider = GetComponent<Collider2D>();
-        keyCollider.isTrigger = true;
+
+        Collider2D keyCollider = GetComponent<Collider2D>();
+        if (keyCollider != null)
+        {
+            Destroy(keyCollider);
+        }
+
+        Rigidbody2D body = GetComponent<Rigidbody2D>();
+        if (body != null)
+        {
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.gravityScale = 0f;
+            body.velocity = Vector2.zero;
+            body.constraints = RigidbodyConstraints2D.FreezeAll;
+        }
 
         if (levelState == null)
         {
@@ -36,6 +51,11 @@ public sealed class FocusKey : MonoBehaviour
         ApplyState();
     }
 
+    private void Update()
+    {
+        TryCollect();
+    }
+
     private void OnDisable()
     {
         if (levelState != null)
@@ -44,26 +64,20 @@ public sealed class FocusKey : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void TryCollect()
     {
-        TryCollect(other);
-    }
+        if (!canCollect || isCollected || levelState == null || levelState.PlayerTransform == null)
+        {
+            return;
+        }
 
-    private void OnTriggerStay2D(Collider2D other)
-    {
-        TryCollect(other);
-    }
-
-    private void TryCollect(Collider2D other)
-    {
-        if (isCollected || levelState == null || levelState.CurrentLayer != FocusLayer.Far || other.transform != levelState.PlayerTransform)
+        if (Vector2.Distance(transform.position, levelState.PlayerTransform.position) > collectDistance)
         {
             return;
         }
 
         isCollected = true;
         spriteRenderer.enabled = false;
-        keyCollider.enabled = false;
         levelState.AdvanceStage(FocusStage.HasKey);
     }
 
@@ -75,7 +89,32 @@ public sealed class FocusKey : MonoBehaviour
         }
 
         spriteRenderer.enabled = true;
-        spriteRenderer.sortingOrder = levelState.GetSortingOrder(FocusLayer.Far) + 1;
-        keyCollider.enabled = levelState.CurrentLayer == FocusLayer.Far;
+        spriteRenderer.sortingOrder = 40;
+    }
+
+    public void SetCollectable(bool collectable)
+    {
+        canCollect = collectable;
+        if (collectable)
+        {
+            DetachFromFocusLayers();
+        }
+    }
+
+    public void DetachFromFocusLayers()
+    {
+        transform.SetParent(null, true);
+        FocusUnityLayers.Assign(transform, 0);
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = !isCollected;
+            spriteRenderer.sortingOrder = 40;
+        }
+    }
+
+    private void OnValidate()
+    {
+        collectDistance = Mathf.Max(0.1f, collectDistance);
     }
 }

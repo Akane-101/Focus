@@ -4,6 +4,11 @@ public sealed class FocusLayerView : MonoBehaviour
 {
     [SerializeField] private FocusLayer representedLayer = FocusLayer.Mid;
 
+    public FocusLayer RepresentedLayer
+    {
+        get { return representedLayer; }
+    }
+
     private FocusLevelState levelState;
     private SpriteRenderer[] renderers;
     private Collider2D[] colliders;
@@ -143,7 +148,9 @@ public sealed class FocusLayerView : MonoBehaviour
                current.GetComponentInParent<FocusKey>() != null ||
                current.GetComponentInParent<FocusPillar>() != null ||
                current.GetComponentInParent<FocusSlope>() != null ||
-               current.GetComponentInParent<FocusElevator>() != null;
+               current.GetComponentInParent<FocusElevator>() != null ||
+               current.GetComponentInParent<FocusPendulum>() != null ||
+               current.GetComponentInParent<FocusIce>() != null;
     }
 
     private static bool BelongsToBridge(Transform current)
@@ -151,11 +158,6 @@ public sealed class FocusLayerView : MonoBehaviour
         while (current != null)
         {
             if (current.GetComponent<FocusBridge>() != null)
-            {
-                return true;
-            }
-
-            if (current.name.ToLowerInvariant().Contains("bridge"))
             {
                 return true;
             }

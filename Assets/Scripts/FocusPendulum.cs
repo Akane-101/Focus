@@ -3,6 +3,8 @@ using UnityEngine;
 public sealed class FocusPendulum : MonoBehaviour
 {
     [SerializeField] private Transform bob;
+    [SerializeField] private FocusLayer rideLayer = FocusLayer.Far;
+    [SerializeField] private bool ignoreFocusLayer;
     [SerializeField] private float maxAngle = 32f;
     [SerializeField] private float period = 4.2f;
     [SerializeField] private float rideWalkSpeed = 4.5f;
@@ -43,6 +45,15 @@ public sealed class FocusPendulum : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        if (levelState != null)
+        {
+            levelState.StateChanged += ApplyState;
+            ApplyState();
+        }
+    }
+
     private void Start()
     {
         if (levelState == null)
@@ -59,11 +70,32 @@ public sealed class FocusPendulum : MonoBehaviour
         playerBody = playerTransform.GetComponent<Rigidbody2D>();
         playerCollider = playerTransform.GetComponent<Collider2D>();
         playerMove = playerTransform.GetComponent<PlayerMove>();
+        ApplyState();
     }
 
     private void OnDisable()
     {
+        if (levelState != null)
+        {
+            levelState.StateChanged -= ApplyState;
+        }
+
         StopRiding();
+    }
+
+    private void ApplyState()
+    {
+        if (seatCollider == null || levelState == null)
+        {
+            return;
+        }
+
+        bool canRide = ignoreFocusLayer || levelState.CurrentLayer == rideLayer;
+        seatCollider.enabled = canRide;
+        if (!canRide)
+        {
+            StopRiding();
+        }
     }
 
     private void LateUpdate()
@@ -103,7 +135,7 @@ public sealed class FocusPendulum : MonoBehaviour
                 return;
             }
 
-            float input = Input.GetAxisRaw("Horizontal");
+            float input = playerMove != null && playerMove.IsStunned ? 0f : Input.GetAxisRaw("Horizontal");
             float nextLocalX = rideLocalX + input * rideWalkSpeed * Time.deltaTime;
             float halfWidth = seatCollider.bounds.extents.x * 0.85f;
 
@@ -193,7 +225,12 @@ public sealed class FocusPendulum : MonoBehaviour
 
     private bool IsPlayerOverSeat(float belowTop, float aboveTop)
     {
-        if (levelState == null || levelState.CurrentLayer != FocusLayer.Mid || seatCollider == null || !seatCollider.enabled)
+        if (levelState == null || seatCollider == null || !seatCollider.enabled)
+        {
+            return false;
+        }
+
+        if (!ignoreFocusLayer && levelState.CurrentLayer != rideLayer)
         {
             return false;
         }

@@ -55,6 +55,7 @@ public sealed class FocusElevator : MonoBehaviour
         if (levelState != null)
         {
             levelState.StateChanged += ApplyState;
+            ApplyState();
         }
     }
 
@@ -112,37 +113,67 @@ public sealed class FocusElevator : MonoBehaviour
         float placedY = car.position.y;
         float topOffset = carCollider != null ? carCollider.bounds.max.y - car.position.y : 0f;
 
-        Collider2D groundCollider = FindNamedCollider("Ground");
-        if (groundCollider != null)
+        SpriteRenderer shaft = FindShaftRenderer();
+        if (shaft != null)
         {
-            bottomY = groundCollider.bounds.max.y - topOffset;
+            bottomY = shaft.bounds.min.y + topOffset;
+            topY = Mathf.Max(bottomY + 0.1f, shaft.bounds.max.y - topOffset);
         }
         else
         {
-            bottomY = placedY;
-        }
-
-        if (alignTarget == null)
-        {
-            GameObject catchPlatform = GameObject.Find("Platform_FarCatch");
-            if (catchPlatform != null)
+            Collider2D groundCollider = FindNamedCollider("Ground");
+            if (groundCollider != null && groundCollider.bounds.max.y <= placedY + 0.25f)
             {
-                alignTarget = catchPlatform.transform;
+                bottomY = groundCollider.bounds.max.y - topOffset;
             }
-        }
+            else
+            {
+                bottomY = placedY;
+            }
 
-        float targetTop = GetTopY(alignTarget);
-        if (!float.IsNaN(targetTop) && targetTop > bottomY + topOffset + 0.1f)
-        {
-            topY = targetTop - topOffset;
-        }
-        else
-        {
-            topY = bottomY + Mathf.Max(0.1f, travelHeight);
+            if (alignTarget == null)
+            {
+                GameObject catchPlatform = GameObject.Find("Platform_FarCatch");
+                if (catchPlatform != null)
+                {
+                    alignTarget = catchPlatform.transform;
+                }
+            }
+
+            float targetTop = GetTopY(alignTarget);
+            if (!float.IsNaN(targetTop) && targetTop > bottomY + topOffset + 0.1f)
+            {
+                topY = targetTop - topOffset;
+            }
+            else
+            {
+                topY = bottomY + Mathf.Max(0.1f, travelHeight);
+            }
         }
 
         float startT = Mathf.InverseLerp(bottomY, topY, placedY);
         motionStartTime = Time.time - GetCycleTimeForT(startT);
+    }
+
+    private SpriteRenderer FindShaftRenderer()
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            Transform child = children[i];
+            if (child == null || child == car || child.name != "BG")
+            {
+                continue;
+            }
+
+            SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                return renderer;
+            }
+        }
+
+        return null;
     }
 
     private static Collider2D FindNamedCollider(string objectName)

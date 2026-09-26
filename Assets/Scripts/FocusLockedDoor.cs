@@ -8,6 +8,7 @@ public sealed class FocusLockedDoor : MonoBehaviour
     [SerializeField] private bool requireCurrentLayer;
     [SerializeField] private FocusLayer requiredLayer = FocusLayer.Far;
     [SerializeField] private float minEnterY = -999f;
+    [SerializeField] private bool requireKey;
 
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
@@ -71,6 +72,11 @@ public sealed class FocusLockedDoor : MonoBehaviour
     private bool CanEnter()
     {
         if (levelState == null || levelState.PlayerTransform == null)
+        {
+            return false;
+        }
+
+        if (requireKey && levelState.CurrentStage < FocusStage.HasKey)
         {
             return false;
         }
