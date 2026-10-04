@@ -11,6 +11,7 @@ public sealed class FocusIce : MonoBehaviour
     [SerializeField] private float interactDistance = 1.6f;
     [SerializeField] private float holdOffsetX = 1.05f;
     [SerializeField] private float fallSpeed = 12f;
+    [SerializeField] private bool anchorToWorldOnPickup;
 
     private FocusLevelState levelState;
     private SpriteRenderer spriteRenderer;
@@ -22,6 +23,7 @@ public sealed class FocusIce : MonoBehaviour
     private bool isMelting;
     private float meltTime;
     private bool isHeld;
+    private bool anchoredToWorld;
     private bool pendingFall;
     private float holdSide = 1f;
     private Collider2D playerCollider;
@@ -113,7 +115,7 @@ public sealed class FocusIce : MonoBehaviour
         }
 
         spriteRenderer.enabled = true;
-        iceCollider.enabled = isHeld || levelState.CurrentLayer == HomeLayer();
+        iceCollider.enabled = anchoredToWorld || isHeld || levelState.CurrentLayer == HomeLayer();
         body.bodyType = RigidbodyType2D.Kinematic;
         body.velocity = Vector2.zero;
         ApplyHeldLayer();
@@ -122,6 +124,12 @@ public sealed class FocusIce : MonoBehaviour
 
     private void ApplyHeldLayer()
     {
+        if (anchoredToWorld)
+        {
+            ApplyWorldLayer();
+            return;
+        }
+
         if (isHeld)
         {
             int playerLayer = LayerMask.NameToLayer(FocusUnityLayers.Player);
@@ -146,6 +154,44 @@ public sealed class FocusIce : MonoBehaviour
         }
 
         spriteRenderer.sortingOrder = levelState.GetSortingOrder(homeLayer, 1);
+    }
+
+    private void ApplyWorldLayer()
+    {
+        FocusUnityLayers.Assign(transform, 0);
+        spriteRenderer.sortingOrder = 1;
+
+        if (keyObject == null)
+        {
+            return;
+        }
+
+        FocusUnityLayers.Assign(keyObject.transform, 0);
+    }
+
+    private void AnchorToWorld()
+    {
+        if (anchoredToWorld)
+        {
+            return;
+        }
+
+        anchoredToWorld = true;
+        DetachFromParent(transform);
+
+        if (keyObject != null)
+        {
+            DetachFromParent(keyObject.transform);
+        }
+
+        ApplyWorldLayer();
+    }
+
+    private static void DetachFromParent(Transform target)
+    {
+        Vector3 worldPosition = target.position;
+        target.SetParent(null, true);
+        target.position = worldPosition;
     }
 
     private FocusLayer HomeLayer()
@@ -178,7 +224,12 @@ public sealed class FocusIce : MonoBehaviour
 
     private bool CanInteract()
     {
-        if (levelState == null || levelState.CurrentLayer != HomeLayer() || levelState.PlayerTransform == null)
+        if (levelState == null || levelState.PlayerTransform == null)
+        {
+            return false;
+        }
+
+        if (!anchoredToWorld && levelState.CurrentLayer != HomeLayer())
         {
             return false;
         }
@@ -218,6 +269,10 @@ public sealed class FocusIce : MonoBehaviour
 
         isHeld = true;
         pendingFall = false;
+        if (anchorToWorldOnPickup)
+        {
+            AnchorToWorld();
+        }
         holdSide = Mathf.Sign(transform.position.x - player.position.x);
         if (Mathf.Abs(holdSide) < 0.5f)
         {

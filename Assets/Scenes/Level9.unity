@@ -1935,6 +1935,7 @@ MonoBehaviour:
   interactDistance: 1.6
   holdOffsetX: 1.05
   fallSpeed: 12
+  anchorToWorldOnPickup: 1
 --- !u!1 &2100000130
 GameObject:
   m_ObjectHideFlags: 0

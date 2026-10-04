@@ -167,6 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bob: {fileID: 1303065924}
+  rideLayer: 1
   maxAngle: 30
   period: 4.2
   rideWalkSpeed: 4.5
