@@ -38,6 +38,13 @@ public sealed class FocusLevelState : MonoBehaviour
     [SerializeField] private bool autoLoadNextScene = true;
     [SerializeField] private float focusTransitionDuration = 0.45f;
     [SerializeField] private float unfocusedBlur = 2.2f;
+    [SerializeField] private bool followPlayerCamera;
+    [SerializeField] private Vector3 cameraOffset = new Vector3(0f, 0.8f, -10f);
+    [SerializeField] private float cameraMinX = 0f;
+    [SerializeField] private float cameraMaxX = 58f;
+    [SerializeField] private float cameraMinY = 0f;
+    [SerializeField] private float cameraMaxY = 3.5f;
+    [SerializeField] private float cameraSmooth = 8f;
 
     public event Action StateChanged;
 
@@ -82,6 +89,29 @@ public sealed class FocusLevelState : MonoBehaviour
         }
 
         PlayerTransform = playerObject.transform;
+    }
+
+    private void LateUpdate()
+    {
+        if (!followPlayerCamera || PlayerTransform == null)
+        {
+            return;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        Vector3 next = PlayerTransform.position + cameraOffset;
+        next.x = Mathf.Clamp(next.x, cameraMinX, cameraMaxX);
+        next.y = Mathf.Clamp(next.y, cameraMinY, cameraMaxY);
+        next.z = cameraOffset.z;
+        mainCamera.transform.position = Vector3.Lerp(
+            mainCamera.transform.position,
+            next,
+            1f - Mathf.Exp(-cameraSmooth * Time.deltaTime));
     }
 
     public void SetLayer(FocusLayer nextLayer)
@@ -240,6 +270,11 @@ public sealed class FocusLevelState : MonoBehaviour
         if (currentName == "Level10" || currentName == "10")
         {
             return "Level11";
+        }
+
+        if (currentName == "Level11" || currentName == "11")
+        {
+            return "Level12";
         }
 
         return null;
